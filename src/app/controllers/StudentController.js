@@ -22,12 +22,18 @@ class StudentController {
   }
 
   async update(req, res) {
-    const student = await Student.findByPk(req.studentId);
+    const { email } = req.body;
+    const student = await Student.findOne({ where: { email } });
 
-    await student.update(req.body);
+    const { id, name, age, weight, height } = await student.update(req.body);
 
     return res.json({
-      student,
+      id,
+      name,
+      email,
+      age,
+      weight,
+      height,
     });
   }
 }

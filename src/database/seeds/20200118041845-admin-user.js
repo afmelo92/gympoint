@@ -1,15 +1,20 @@
-module.exports = {
-  up: queryInterface => {
-    /*
-      Add altering commands here.
-      Return a promise to correctly handle asynchronicity.
+const bcrypt = require('bcryptjs');
 
-      Example:
-      return queryInterface.bulkInsert('People', [{
-        name: 'John Doe',
-        isBetaMember: false
-      }], {});
-    */
+module.exports = {
+  up: QueryInterface => {
+    return QueryInterface.bulkInsert(
+      'users',
+      [
+        {
+          name: 'Administrador',
+          email: 'admin@gympoint.com',
+          password_hash: bcrypt.hashSync('123456', 8),
+          created_at: new Date(),
+          updated_at: new Date(),
+        },
+      ],
+      {}
+    );
   },
 
   down: () => {},

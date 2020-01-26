@@ -1,6 +1,7 @@
 // import * as Yup from 'yup';
 import { startOfDay, isBefore, parseISO, addMonths, format } from 'date-fns';
 import pt from 'date-fns/locale/pt-BR';
+import numeral from 'numeral';
 
 import Registration from '../models/Registration';
 import Plan from '../models/Plan';
@@ -15,6 +16,7 @@ class RegistrationController {
 
     const checkStudent = await Student.findByPk(student_id);
     const studentName = checkStudent.name;
+    const studentEmail = checkStudent.email;
 
     if (!checkStudent) {
       return res.status(401).json({ error: 'Student does not exists' });
@@ -37,33 +39,16 @@ class RegistrationController {
     const formattedDate = format(endDate, "'dia' dd 'de' MMMM 'de' yyyy", {
       locale: pt,
     });
-    const price = checkPlan.price * checkPlan.duration;
+    const price = numeral(checkPlan.price * checkPlan.duration).format('0,00');
 
     try {
-      await Registration.create({
+      const registration = await Registration.create({
         start_date,
         end_date: endDate,
         price,
         student_id,
         plan_id,
       });
-
-      const registration = await Registration.findOne(
-        {
-          where: { start_date, end_date: endDate, price, student_id, plan_id },
-        },
-        {
-          include: [
-            {
-              model: Student,
-              as: 'student',
-              attributes: ['name', 'email'],
-            },
-          ],
-        }
-      );
-
-      console.log(registration.student);
 
       /**
        * await Notification.create({
@@ -78,12 +63,13 @@ class RegistrationController {
        */
 
       await Mail.sendMail({
-        to: `${registration.student.name} <${registration.student.email}>`,
+        to: `${studentName} <${studentEmail}>`,
         subject: 'Sua matrícula foi efetuada',
-        text: 'Sua matrícula foi efetuada com sucesso!',
+        text: `Sua matrícula foi efetuada com sucesso no Plano ${planName}.
+        A data de término será ${formattedDate} e o valor total é: ${price}!`,
       });
 
-      return res.json(registration.student.name);
+      return res.json(registration);
     } catch (error) {
       return res.json(error);
     }

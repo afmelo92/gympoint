@@ -1,4 +1,4 @@
-// import * as Yup from 'yup';
+import * as Yup from 'yup';
 import { startOfDay, isBefore, parseISO, addMonths, format } from 'date-fns';
 import pt from 'date-fns/locale/pt-BR';
 
@@ -31,6 +31,16 @@ class RegistrationController {
   }
 
   async store(req, res) {
+    const schema = Yup.object().shape({
+      student_id: Yup.number().required(),
+      plan_id: Yup.number().required(),
+      start_date: Yup.date().required(),
+    });
+
+    if (!(await schema.isValid(req.body))) {
+      return res.status(400).json({ error: 'Validation fails' });
+    }
+
     const { student_id, plan_id, start_date } = req.body;
 
     const checkRegistration = await Registration.findOne({
@@ -105,6 +115,15 @@ class RegistrationController {
   }
 
   async update(req, res) {
+    const schema = Yup.object().shape({
+      plan_id: Yup.number().required(),
+      start_date: Yup.date().required(),
+    });
+
+    if (!(await schema.isValid(req.body))) {
+      return res.status(400).json({ error: 'Validation fails' });
+    }
+
     const { plan_id, start_date } = req.body;
     const registration = await Registration.findByPk(req.params.id);
 

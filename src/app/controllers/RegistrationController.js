@@ -74,8 +74,16 @@ class RegistrationController {
       return res.status(400).json({ error: 'Past dates are not permitted' });
     }
 
+    const formattedStartDate = format(
+      dayStart,
+      "'dia' dd 'de' MMMM 'de' yyyy",
+      {
+        locale: pt,
+      }
+    );
+
     const endDate = addMonths(parseISO(start_date), checkPlan.duration);
-    const formattedDate = format(endDate, "'dia' dd 'de' MMMM 'de' yyyy", {
+    const formattedEndDate = format(endDate, "'dia' dd 'de' MMMM 'de' yyyy", {
       locale: pt,
     });
     const price = (checkPlan.price * checkPlan.duration).toFixed(2);
@@ -104,8 +112,14 @@ class RegistrationController {
       await Mail.sendMail({
         to: `${studentName} <${studentEmail}>`,
         subject: 'Sua matrícula foi efetuada',
-        text: `Sua matrícula foi efetuada com sucesso no Plano ${planName}.
-        A data de término será ${formattedDate} e o valor total é: R$${price}!`,
+        template: 'creation',
+        context: {
+          student: studentName,
+          plan: planName,
+          start_date: formattedStartDate,
+          end_date: formattedEndDate,
+          price,
+        },
       });
 
       return res.json(registration);
@@ -148,7 +162,7 @@ class RegistrationController {
 
     const price = (checkPlan.price * checkPlan.duration).toFixed(2);
 
-    const { id } = registration.update(req.body);
+    const { id } = await registration.update(req.body);
 
     return res.json({
       id,
@@ -176,7 +190,18 @@ class RegistrationController {
       return res.status(400).json({ error: 'Registration does not exists' });
     }
 
-    await registration.destroy();
+    const student = await Student.findByPk(registration.student.id);
+
+    await Mail.sendMail({
+      to: `${student.name} <${student.email}>`,
+      subject: 'Sua matrícula foi cancelada',
+      template: 'cancellation',
+      context: {
+        student: student.name,
+      },
+    });
+
+    // await registration.destroy();
 
     return res.json({ registration });
   }

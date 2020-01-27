@@ -7,7 +7,9 @@ import Plan from '../models/Plan';
 import Student from '../models/Student';
 // import Notification from '../schemas/Notification';
 
-import Mail from '../../lib/Mail';
+import CancellationMail from '../jobs/CancellationMail';
+import CreationMail from '../jobs/CreationMail';
+import Queue from '../../lib/Queue';
 
 class RegistrationController {
   async index(req, res) {
@@ -109,17 +111,12 @@ class RegistrationController {
       });
        */
 
-      await Mail.sendMail({
-        to: `${studentName} <${studentEmail}>`,
-        subject: 'Sua matrícula foi efetuada',
-        template: 'creation',
-        context: {
-          student: studentName,
-          plan: planName,
-          start_date: formattedStartDate,
-          end_date: formattedEndDate,
-          price,
-        },
+      await Queue.add(CreationMail.key, {
+        studentName,
+        plan: planName,
+        start_date: formattedStartDate,
+        end_date: formattedEndDate,
+        price,
       });
 
       return res.json(registration);
@@ -190,18 +187,13 @@ class RegistrationController {
       return res.status(400).json({ error: 'Registration does not exists' });
     }
 
+    // await registration.destroy();
+
     const student = await Student.findByPk(registration.student.id);
 
-    await Mail.sendMail({
-      to: `${student.name} <${student.email}>`,
-      subject: 'Sua matrícula foi cancelada',
-      template: 'cancellation',
-      context: {
-        student: student.name,
-      },
+    await Queue.add(CancellationMail.key, {
+      student,
     });
-
-    // await registration.destroy();
 
     return res.json({ registration });
   }

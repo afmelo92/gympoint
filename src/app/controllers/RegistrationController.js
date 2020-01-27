@@ -113,6 +113,7 @@ class RegistrationController {
 
       await Queue.add(CreationMail.key, {
         studentName,
+        studentEmail,
         plan: planName,
         start_date: formattedStartDate,
         end_date: formattedEndDate,

@@ -188,7 +188,7 @@ class RegistrationController {
       return res.status(400).json({ error: 'Registration does not exists' });
     }
 
-    // await registration.destroy();
+    await registration.destroy();
 
     const student = await Student.findByPk(registration.student.id);
 
